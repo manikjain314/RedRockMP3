@@ -99,4 +99,23 @@ def bigramBayes(train_set, train_labels, dev_set, unigram_smoothing_parameter=1.
     """
     # TODO: Write your code here
     # return predicted labels of development set using a bigram model
-    return []
+    
+    # Creates the word pairs from the train_set
+    # Pulled from https://www.geeksforgeeks.org/python-all-possible-pairs-in-list/
+    word_pairs = [(a, b) for idx, a in enumerate(train_set) for b in train_set[idx + 1:]]
+    
+    # Creates list of words associated with positive value and negative values for bigram model.
+    bi_positive, bi_negative = preprocessFrequencies(word_pairs, train_labels)
+    bi_num_pos_words = sum(positive.values())
+    bi_num_neg_words = sum(negative.values())
+    
+    # Creates list of words associated with positive value and negative values for unigram model.
+    uni_positive, uni_negative = preprocessFrequencies(train_set, train_labels)
+    uni_num_pos_words = sum(positive.values())
+    uni_num_neg_words = sum(negative.values())
+    
+    
+    # Predicts probabilities for bigram and unigram models.
+    bi_prob = predictProbabilities(word_pairs, bi_positive, bi_negative, bi_num_pos_words, bi_num_neg_words, bigram_smoothing_parameter, pos_prior)
+    uni_prob = predictProbabilities(dev_set, uni_positive, uni_negative, uni_num_pos_words, uni_num_neg_words, unigram_smoothing_parameter, pos_prior)
+    return (1-bigram_lambda)*bi_prob - (1-unigram_lambda)*uni_prob
