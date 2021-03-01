@@ -29,6 +29,7 @@ def compute_accuracies(predicted_labels, dev_labels):
     false_positive = fp
     false_negative = fn
     true_positive = tp
+
     return accuracy, false_positive, false_negative, true_positive, true_negative
 
 
