@@ -9,6 +9,7 @@
 
 from collections import defaultdict
 import math
+import numpy as np
 
 def preprocessFrequencies(train_set, train_labels):
     POS = 1
@@ -78,6 +79,24 @@ def naiveBayes(train_set, train_labels, dev_set, smoothing_parameter=0.05, pos_p
     return predictProbabilities(dev_set, positive, negative, num_positive_words, num_negative_words, smoothing_parameter, pos_prior)
 
 
+def preprocessWordFairFreqs(train_set, train_labels):
+    POS = 1
+    NEG = 0
+
+    positive_pairs = defaultdict(int)
+    negative_pairs = defaultdict(int)
+
+    for i in range (len(train_set)):
+        review = train_set[i]
+        for j in range (len(review) - 1):
+            if train_labels[i] == POS:
+                positive_pairs[(review[j], review[j+1])] += 1
+            else:
+                negative_pairs[(review[j], review[j+1])] += 1
+    
+    return positive_pairs, negative_pairs
+            
+
 
 def bigramBayes(train_set, train_labels, dev_set, unigram_smoothing_parameter=1.0, bigram_smoothing_parameter=1.0, bigram_lambda=0.5,pos_prior=0.8):
     """
@@ -99,23 +118,24 @@ def bigramBayes(train_set, train_labels, dev_set, unigram_smoothing_parameter=1.
     """
     # TODO: Write your code here
     # return predicted labels of development set using a bigram model
-    
-    # Creates the word pairs from the train_set
-    # Pulled from https://www.geeksforgeeks.org/python-all-possible-pairs-in-list/
-    word_pairs = [(a, b) for idx, a in enumerate(train_set) for b in train_set[idx + 1:]]
+
     
     # Creates list of words associated with positive value and negative values for bigram model.
-    bi_positive, bi_negative = preprocessFrequencies(word_pairs, train_labels)
-    bi_num_pos_words = sum(positive.values())
-    bi_num_neg_words = sum(negative.values())
+    bi_positive_pairs, bi_negative_pairs = preprocessWordFairFreqs(train_set, train_labels)
+    
+    bi_num_pos_words = sum(bi_positive_pairs.values())
+    bi_num_neg_words = sum(bi_negative_pairs.values())
     
     # Creates list of words associated with positive value and negative values for unigram model.
     uni_positive, uni_negative = preprocessFrequencies(train_set, train_labels)
-    uni_num_pos_words = sum(positive.values())
-    uni_num_neg_words = sum(negative.values())
+    uni_num_pos_words = sum(uni_positive.values())
+    uni_num_neg_words = sum(uni_negative.values())
     
     
     # Predicts probabilities for bigram and unigram models.
-    bi_prob = predictProbabilities(word_pairs, bi_positive, bi_negative, bi_num_pos_words, bi_num_neg_words, bigram_smoothing_parameter, pos_prior)
+    bi_prob = predictProbabilities(dev_set, bi_positive_pairs, bi_negative_pairs, bi_num_pos_words, bi_num_neg_words, bigram_smoothing_parameter, pos_prior)
     uni_prob = predictProbabilities(dev_set, uni_positive, uni_negative, uni_num_pos_words, uni_num_neg_words, unigram_smoothing_parameter, pos_prior)
-    return (1-bigram_lambda)*bi_prob - (1-unigram_lambda)*uni_prob
+
+    bi_prob_arr = np.array(bi_prob)
+    uni_prob_arr = np.array(uni_prob)
+    return list((bigram_lambda)*bi_prob_arr + (1 - bigram_lambda)*uni_prob_arr)
